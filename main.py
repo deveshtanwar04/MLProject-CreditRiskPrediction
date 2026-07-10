@@ -1,8 +1,23 @@
 import streamlit as st
+import pickle
+
+
+# ---------- LOAD MODEL (Cached for speed) ----------
+@st.cache_resource
+def load_model(path):
+    with open(path, "rb") as f:
+        return pickle.load(f)
+
+model = load_model("Model.pickle")
+
 
 # ---------- TITLE SECTION ----------
 st.markdown(
-    "<h1 style='text-align: center;'>📊 Loan Approval Prediction</h1>",
+    "<h2 style='text-align: center;'>🏦 Credit Risk & Default Prediction Engine</h2>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<p style='text-align: center; color: gray;'>Automated Underwriting & Borrower Assessment System</p>",
     unsafe_allow_html=True
 )
 st.divider()
@@ -54,28 +69,17 @@ def categorise_cibil_score(x):
         return 2
 cibil_score=categorise_cibil_score(cibil_score)
 
+
+
 # ---------- OUTPUT ----------
 if submit:
 
-    import pickle
-
-    @st.cache_resource
-    def load_model(path):
-        with open(path, "rb") as f:
-            return pickle.load(f)
-
-    model = load_model("Model.pickle")
-    
-    # # Preparing the input data for prediction
-    
     input_data = [[dependents, education, self_employed, cibil_score,
        loan_tenure, loan_to_income, assets_to_loan, EMI_isto_income]]
 
-    # # Making prediction
     prediction = model.predict(input_data)
 
-    # Displaying the result
     if prediction[0] == 1:
-        st.markdown("<h3 style='text-align: center; color: green;'>✅ Loan may be Approved</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: green;'>✅ Low Default Risk: Loan Approved</h3>", unsafe_allow_html=True)
     else:
-        st.markdown("<h3 style='text-align: center; color: red;'>❌ Loan may be Rejected</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: red;'>❌ High Default Risk: Loan Rejected</h3>", unsafe_allow_html=True)
