@@ -1,3 +1,5 @@
 fastapi[standard]
 pydantic
-sklearn
+scikit-learn
+pandas
+numpy
