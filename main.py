@@ -1,85 +1,97 @@
 import streamlit as st
-import pickle
+import requests
+import time
 
+API_URL = "http://127.0.0.1:8000/predict"
 
-# ---------- LOAD MODEL (Cached for speed) ----------
-@st.cache_resource
-def load_model(path):
-    with open(path, "rb") as f:
-        return pickle.load(f)
-
-model = load_model("Model.pickle")
-
+# ---------- PAGE CONFIG ----------
+# Sets the browser tab title and widens the layout
+st.set_page_config(page_title="Credit Risk Engine", page_icon="🏦", layout="wide")
 
 # ---------- TITLE SECTION ----------
 st.markdown(
-    "<h2 style='text-align: center;'>🏦 Credit Risk & Default Prediction Engine</h2>",
+    "<h1 style='text-align: center;'>🏦 Credit Risk & Default Prediction Engine</h1>",
     unsafe_allow_html=True
 )
 st.markdown(
-    "<p style='text-align: center; color: gray;'>Automated Underwriting & Borrower Assessment System</p>",
+    "<p style='text-align: center; color: white;'>Automated Underwriting & Borrower Assessment System</p>",
     unsafe_allow_html=True
 )
 st.divider()
 
 # ---------- FORM SECTION ----------
 with st.form("input_form"):
+    # UI Upgrade: Logical grouping of inputs
     col1, col2, col3 = st.columns(3)
-
+    
     with col1:
-        loan_amount=st.number_input("Loan amount: ", min_value=100000, step=1, max_value=100000000, key="loan_amount")
-        if st.selectbox("Education: ", options=["Not Graduate", "Graduate"], key="education")=='Graduate':
-            education=1
-        else:
-            education=0
-        residential_assets_value=st.number_input("Residential assets value: ", min_value=0, step=1, key="residential_assets_value")
-        luxury_assets_value=st.number_input("Luxury assets value: ",min_value=0,max_value=100000000,step=1, key="luxury_assets_value")
+        st.markdown("#### 👤 Applicant Info")
+        annual_income = st.number_input("Annual Income (₹): ", min_value=100000, step=10000, max_value=50000000)
+        cibil_score = st.number_input("CIBIL Score: ", min_value=300, step=10, max_value=900)
+        dependents = st.number_input("No. of Dependents: ", min_value=0, step=1, max_value=10)
+        education = 1 if st.selectbox("Education: ", options=["Not Graduate", "Graduate"]) == 'Graduate' else 0
+        self_employed = 0 if st.selectbox("Employment Status: ", options=["Self-employed", "Salaried"]) == 'Self-employed' else 1
 
     with col2:
-        loan_tenure=st.number_input("Loan tenure(yr): ",min_value=1, step=1,max_value=30, key="loan_tenure")
-        annual_income=st.number_input("Annual income: ",min_value=100000, step=1, max_value=50000000, key="annual_income")
-        bank_asset_value=st.number_input("Bank assets value: ",min_value=0,max_value=100000000, step=1, key="bank_asset_value")
-        if st.selectbox("Employment status: ", options=["Self-employed", "Salaried"], key="employment_status")=='Self-employed':
-            self_employed=0
-        else:
-            self_employed=1
-
-
+        st.markdown("#### 🏠 Asset Declaration")
+        residential_assets_value = st.number_input("Residential Assets (₹): ", min_value=0, step=10000)
+        commercial_assets_value = st.number_input("Commercial Assets (₹): ", min_value=0, step=10000)
+        luxury_assets_value = st.number_input("Luxury Assets (₹): ", min_value=0, step=10000)
+        bank_asset_value = st.number_input("Bank Assets (₹): ", min_value=0, step=10000)
+    
     with col3:
-        cibil_score=st.number_input("CIBIL score: ", min_value=300, step=1, max_value=900, key="cibil_score")
-        dependents=st.number_input("No. of dependents: ", min_value=1, step=1, max_value=10, key="dependents")
-        commercial_assets_value=st.number_input("Commercial assets value: ",min_value=0,max_value=100000000, step=1, key="commercial_assets_value")
+        st.markdown("#### 📝 Loan Details")
+        loan_amount = st.number_input("Loan Amount (₹): ", min_value=10000, step=10000  , max_value=100000000)
+        loan_tenure = st.number_input("Loan Tenure (Years): ", min_value=1, step=1, max_value=30)
+    
 
-    submit = st.form_submit_button("Submit")
-
-loan_to_income=loan_amount/annual_income
-assets_to_loan=(residential_assets_value + commercial_assets_value + luxury_assets_value + bank_asset_value)/loan_amount
-estimated_EMI=loan_amount/(loan_tenure*12)
-EMI_isto_income=(estimated_EMI/(annual_income/12))
-def categorise_cibil_score(x):
-    if x>=300 and x<=579:
-        return 1
-    elif x>=800 and x<=900:
-        return 5
-    elif x>=670 and x<=739:
-        return 3
-    elif x>=740 and x<=799:
-        return 4
-    else:
-        return 2
-cibil_score=categorise_cibil_score(cibil_score)
-
+    st.write("") # Adding little space before the submit button
+    submit = st.form_submit_button("Run Risk Assessment", use_container_width=True)
 
 
 # ---------- OUTPUT ----------
 if submit:
+    input_data = {
+        "loan_amount": loan_amount,
+        "education": education,
+        "residential_assets_value": residential_assets_value,
+        "luxury_assets_value": luxury_assets_value,
+        "loan_tenure": loan_tenure,
+        "annual_income": annual_income,
+        "bank_asset_value": bank_asset_value,
+        "self_employed": self_employed,
+        "cibil_score": cibil_score,
+        "dependents": dependents,
+        "commercial_assets_value": commercial_assets_value
+    }
 
-    input_data = [[dependents, education, self_employed, cibil_score,
-       loan_tenure, loan_to_income, assets_to_loan, EMI_isto_income]]
+    with st.spinner("Analyzing applicant data via API..."):
+        try:
+            time.sleep(1)
+            response = requests.post(API_URL, json=input_data)
+            response.raise_for_status() # Check for HTTP errors
+            
+            result = response.json()
+            prediction = result["prediction"][0]
 
-    prediction = model.predict(input_data)
+            st.divider()
 
-    if prediction[0] == 1:
-        st.markdown("<h3 style='text-align: center; color: green;'>✅ Low Default Risk: Loan Approved</h3>", unsafe_allow_html=True)
-    else:
-        st.markdown("<h3 style='text-align: center; color: red;'>❌ High Default Risk: Loan Rejected</h3>", unsafe_allow_html=True)
+            if prediction == 1:
+                st.success("**Low Default Risk: Loan Approved**", icon="✅")
+                st.write("<p style='text-align: center; color: gray;'>The loan application has been approved based on the low default risk assessment.</p>", unsafe_allow_html=True)
+            else:
+                st.error("**High Default Risk: Loan Rejected**", icon="❌")
+                st.write("<p style='text-align: center; color: gray;'>Please review the applicant's financials and consider alternative collateral options.</p>", unsafe_allow_html=True)
+            
+
+            st.divider()
+            st.write("")
+            st.write("")
+            st.divider()
+            with st.expander("View Raw API Response"):
+                st.json(result)
+
+        except requests.exceptions.ConnectionError:
+            st.error("🚨 **Connection Error:** Could not connect to the API...")
+        except Exception as e:
+            st.error(f"⚠️ **Error:** {e}")
