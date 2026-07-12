@@ -23,6 +23,12 @@ class InputData(BaseModel):
 with open('Model.pickle', 'rb') as f:
     model = pickle.load(f)
 
+# Defining the health check endpoint
+@app.get('/health')
+def health_check():
+    return {"status": "API is healthy and running."}
+
+
 # Defining the prediction endpoint
 @app.post('/predict')
 def predict(input_data: InputData):
