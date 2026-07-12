@@ -52,7 +52,6 @@ To mimic real-world enterprise environments, the application was upgraded from a
 ├── backend/
 │   ├── api.py                 # FastAPI server and inference logic
 │   ├── Model.pickle           # Serialized Random Forest pipeline
-│   ├── pyproject.toml         # Build configuration
 │   └── requirements.txt       # Backend ML dependencies
 ├── frontend/
 │   ├── app.py                 # Streamlit UI client
