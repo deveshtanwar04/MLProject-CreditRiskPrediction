@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import time
 
-API_URL = "http://127.0.0.1:8000/predict"
+API_URL = "https://credit-risk-pred-engine-api.onrender.com/predict"
 
 # ---------- PAGE CONFIG ----------
 # Sets the browser tab title and widens the layout
