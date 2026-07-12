@@ -23,6 +23,12 @@ class InputData(BaseModel):
 with open('Model.pickle', 'rb') as f:
     model = pickle.load(f)
 
+
+# Defining the root endpoint
+@app.get('/')
+def read_root():
+    return {"message": "Welcome to the Credit Risk and default Prediction API. Use the /predict endpoint to get predictions."}
+
 # Defining the health check endpoint
 @app.get('/health')
 def health_check():
